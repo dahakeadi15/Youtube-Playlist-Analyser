@@ -49,15 +49,23 @@ def main(index, webURL):
     n_vids = len(vid_times)
     t_len = 0
     avg_len = 0
+    time_remaining = []
 
     for time in vid_times:
         timelist = str(time.text).split(":")
-        t_len += float(timelist[-1]) / 3600
-        t_len += float(timelist[-2]) / 60
+        vid_time = float(timelist[-1]) / 3600 + float(timelist[-2]) / 60
         if len(timelist) == 3:
-            t_len += float(timelist[0])
+            vid_time += float(timelist[0])
+        t_len += vid_time
+        time_remaining.append(vid_time)
 
     avg_len = t_len / n_vids
+
+    c_sum = 0
+    for i in range(len(time_remaining)):
+        temp = time_remaining[i]
+        time_remaining[i] = t_len - c_sum
+        c_sum += temp
 
     with open(
         f"./exportedData/{index}. {playlist_title.text}.json", mode="w", encoding="utf8"
@@ -65,15 +73,18 @@ def main(index, webURL):
         file.write("{\n")
         file.write(f'\t"title" : "{playlist_title.text}",\n')
         file.write(f'\t"total videos" : "{n_vids}",\n')
-        file.write(f'\t"total length" : "{t_len} hrs",\n')
-        file.write(f'\t"average length per vid" : "{avg_len * 60} mins",\n')
+        file.write(f'\t"total length" : "{round(t_len, 2)} hrs",\n')
+        file.write(f'\t"average length per vid" : "{round(avg_len * 60, 2)} mins",\n')
         file.write('\t"videos": [\n')
         for i in range(n_vids):
             file.write("\t\t{\n")
             file.write(f'\t\t\t"index": "{i+1}",\n')
             title = vid_titles[i].text.replace('"', '\\"')
             file.write(f'\t\t\t"title": "{title}",\n')
-            file.write(f'\t\t\t"time": "{vid_times[i].text}"\n')
+            file.write(f'\t\t\t"time": "{vid_times[i].text}",\n')
+            file.write(
+                f'\t\t\t"time remaining to complete" : "{round(time_remaining[i], 2)} hrs"\n'
+            )
             if i != n_vids - 1:
                 file.write("\t\t},\n")
             else:
